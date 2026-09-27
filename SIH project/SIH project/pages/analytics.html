@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Analytics — NER Landslide EWS</title>
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="logo-icon">⛰️</span><span>NER Landslide EWS</span></div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <a class="alert-bell" href="alerts.html">🔔<span class="alert-badge">3</span></a>
+    </div>
+  </header>
+  <div class="main main-wide">
+    <div class="sidebar">
+      <h3>Navigation</h3>
+      <a class="nav-item" href="../index.html">📊 Overview</a>
+      <a class="nav-item" href="sensors.html">📡 Sensors</a>
+      <a class="nav-item" href="alerts.html">🚨 Alerts</a>
+      <a class="nav-item active" href="analytics.html">📈 Analytics</a>
+      <a class="nav-item" href="settings.html">⚙️ Settings</a>
+      <div class="node-list">
+        <h3>Deployed Nodes</h3>
+        <div id="sidebarNodes"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1 class="page-title">📈 Analytics & Trends</h1>
+      <p class="page-sub">Historical data and AI-driven risk forecasting</p>
+
+      <div class="toolbar">
+        <button class="filter-btn active">24 Hours</button>
+        <button class="filter-btn">7 Days</button>
+        <button class="filter-btn">30 Days</button>
+        <button class="filter-btn">Custom</button>
+        <button class="btn btn-secondary" onclick="showToast('Report exported as PDF')">📥 Export Report</button>
+      </div>
+
+      <div class="card-grid">
+        <div class="stat-card"><div class="stat-label">Avg Risk Score</div><div class="stat-value">0.42</div><div class="stat-delta trend-up">▲ 0.08 vs yesterday</div></div>
+        <div class="stat-card"><div class="stat-label">Peak Rainfall</div><div class="stat-value">52.3 mm/hr</div><div class="stat-delta" style="color:var(--muted)">at NL-04, 2 min ago</div></div>
+        <div class="stat-card"><div class="stat-label">Alerts Today</div><div class="stat-value">5</div><div class="stat-delta trend-up">▲ 2 vs yesterday</div></div>
+        <div class="stat-card"><div class="stat-label">Model Accuracy</div><div class="stat-value">94.2%</div><div class="stat-delta" style="color:var(--green)">LSTM v2.3</div></div>
+      </div>
+
+      <div class="chart-card">
+        <h3>🌧️ Rainfall vs Soil Moisture (24h)</h3>
+        <canvas id="chart1"></canvas>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <h3>📊 AI Risk Score Trend</h3>
+          <canvas id="chart2"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📐 Tilt & Pore Pressure</h3>
+          <canvas id="chart3"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>🔥 Node Risk Heatmap (Last 7 Days)</h3>
+        <div id="heatmap" style="display:grid;grid-template-columns:120px repeat(7,1fr);gap:4px;font-size:11px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const opts = (min=0,max=60) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:'#8b949e', font:{size:11} } } },
+    scales:{
+      x:{ grid:{ color:'rgba(48,54,61,.3)' }, ticks:{ color:'#8b949e', font:{size:10} } },
+      y:{ grid:{ color:'rgba(48,54,61,.5)' }, ticks:{ color:'#8b949e', font:{size:10} }, min, max }
+    }
+  });
+
+  const hours = Array.from({length:12},(_,i)=>`${(i*2).toString().padStart(2,'0')}:00`);
+
+  new Chart(document.getElementById('chart1'), {
+    type:'line',
+    data:{ labels:hours, datasets:[
+      { label:'Rainfall (mm/hr)', data:[10,12,15,14,18,22,25,28,32,38,45,52], borderColor:'#58a6ff', tension:0.4, pointRadius:2, borderWidth:2 },
+      { label:'Soil Moisture (%)', data:[22,23,24,26,28,30,32,33,35,36,37,38], borderColor:'#f85149', tension:0.4, pointRadius:2, borderWidth:2 },
+    ]}, options:opts(0,60)
+  });
+
+  new Chart(document.getElementById('chart2'), {
+    type:'line',
+    data:{ labels:hours, datasets:[
+      { label:'Risk Score', data:[0.2,0.25,0.3,0.28,0.35,0.4,0.45,0.5,0.55,0.6,0.7,0.87],
+        borderColor:'#f85149', backgroundColor:'rgba(248,81,73,.1)', fill:true, tension:0.4, pointRadius:2, borderWidth:2 }
+    ]}, options:opts(0,1)
+  });
+
+  new Chart(document.getElementById('chart3'), {
+    type:'line',
+    data:{ labels:hours, datasets:[
+      { label:'Tilt (°)', data:[1,1.1,1.2,1.4,1.8,2.1,2.5,2.9,3.2,3.6,4,4.2], borderColor:'#d29922', tension:0.4, pointRadius:2, borderWidth:2 },
+      { label:'Pore Pressure (kPa)', data:[8,8.4,8.8,9.5,10.2,11,11.8,12.5,13.2,14,14.8,15.2], borderColor:'#db6d28', tension:0.4, pointRadius:2, borderWidth:2 },
+    ]}, options:opts(0,20)
+  });
+
+  // Heatmap
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = `<div style="font-weight:600;color:var(--muted);">Node \\ Day</div>` +
+    days.map(d => `<div style="font-weight:600;color:var(--muted);text-align:center;">${d}</div>`).join('');
+
+  EWS_DATA.nodes.forEach(n => {
+    hm.innerHTML += `<div style="padding:6px 0;font-weight:600;">${n.id}</div>`;
+    for (let i=0;i<7;i++) {
+      const v = Math.random();
+      const color = v>0.7 ? 'rgba(248,81,73,.7)' : v>0.4 ? 'rgba(210,153,34,.6)' : 'rgba(63,185,80,.5)';
+      hm.innerHTML += `<div title="Score: ${v.toFixed(2)}" style="background:${color};height:28px;border-radius:4px;cursor:pointer;" onclick="showToast('${n.id} — ${days[i]}: score ${v.toFixed(2)}')"></div>`;
+    }
+  });
+</script>
+</body>
+</html>

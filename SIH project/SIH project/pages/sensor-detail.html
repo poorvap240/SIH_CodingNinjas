@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sensor Detail — NER Landslide EWS</title>
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="logo-icon">⛰️</span><span>NER Landslide EWS</span></div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <a class="alert-bell" href="alerts.html">🔔<span class="alert-badge">3</span></a>
+    </div>
+  </header>
+  <div class="main main-wide">
+    <div class="sidebar">
+      <h3>Navigation</h3>
+      <a class="nav-item" href="../index.html">📊 Overview</a>
+      <a class="nav-item active" href="sensors.html">📡 Sensors</a>
+      <a class="nav-item" href="alerts.html">🚨 Alerts</a>
+      <a class="nav-item" href="analytics.html">📈 Analytics</a>
+      <a class="nav-item" href="settings.html">⚙️ Settings</a>
+      <div class="node-list">
+        <h3>Deployed Nodes</h3>
+        <div id="sidebarNodes"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <a href="sensors.html" style="font-size:12px;color:var(--blue);text-decoration:none;">← Back to Sensors</a>
+      <h1 class="page-title" id="nodeTitle" style="margin-top:10px;">Loading...</h1>
+      <p class="page-sub" id="nodeSub">—</p>
+
+      <div class="card-grid" id="metricGrid"></div>
+
+      <div class="chart-card">
+        <h3>📈 Sensor Telemetry — Last 24 Hours</h3>
+        <canvas id="detailChart"></canvas>
+      </div>
+
+      <div class="card-grid">
+        <div class="stat-card">
+          <div class="stat-label">Node Status</div>
+          <div class="stat-value" style="font-size:18px;"><span class="status-pill pill-green">● Online</span></div>
+          <div class="stat-delta" style="color:var(--muted)">Last packet: 3s ago</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">LoRa Signal</div>
+          <div class="stat-value" style="font-size:18px;">-78 dBm</div>
+          <div class="stat-delta" style="color:var(--green)">Good</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Firmware</div>
+          <div class="stat-value" style="font-size:18px;">v2.3.1</div>
+          <div class="stat-delta" style="color:var(--muted)">Up to date</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Edge Model</div>
+          <div class="stat-value" style="font-size:18px;">LSTM-TinyML</div>
+          <div class="stat-delta" style="color:var(--muted)">Inference: 42ms</div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="showToast('Re-calibration command sent to node')">🔧 Re-calibrate</button>
+        <button class="btn btn-secondary" onclick="showToast('Raw telemetry downloaded')">📥 Export Data</button>
+        <button class="btn btn-danger" onclick="openModal('resetModal')">⚠️ Force Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="resetModal">
+  <div class="modal">
+    <h2>⚠️ Force Reset Node?</h2>
+    <p>This will reboot the sensor node and clear its local cache. Historical cloud data will remain intact. The node will be offline for ~45 seconds.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('resetModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="closeModal('resetModal');showToast('Node reset command sent','var(--red)')">Confirm Reset</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id') || 'NL-04';
+  const node = EWS_DATA.nodes.find(n => n.id === id) || EWS_DATA.nodes[0];
+
+  document.getElementById('nodeTitle').textContent = `${node.id} — ${node.name}`;
+  document.getElementById('nodeSub').textContent = `Real-time telemetry and AI risk analysis for node ${node.id}`;
+
+  const metrics = [
+    { label:'Rainfall', value:node.rainfall, unit:'mm/hr', color:'var(--blue)',  pct:node.rainfall/60*100 },
+    { label:'Soil Moisture', value:node.soil, unit:'% VMC', color:'var(--red)',   pct:node.soil/40*100 },
+    { label:'Tilt', value:node.tilt, unit:'°',            color:'var(--amber)', pct:node.tilt/6*100 },
+    { label:'Pore Pressure', value:node.pore, unit:'kPa', color:'var(--orange)',pct:node.pore/18*100 },
+    { label:'AI Risk Score', value:node.score.toFixed(2), unit:'', color:node.color, pct:node.score*100 },
+    { label:'Battery', value:node.battery, unit:'%',      color:'var(--green)', pct:node.battery },
+  ];
+
+  document.getElementById('metricGrid').innerHTML = metrics.map(m => `
+    <div class="stat-card">
+      <div class="stat-label">${m.label}</div>
+      <div class="stat-value">${m.value} <span style="font-size:13px;color:var(--muted);font-weight:400;">${m.unit}</span></div>
+      <div class="metric-bar" style="margin-top:10px;">
+        <div class="metric-bar-fill" style="width:${Math.min(100,m.pct)}%;background:${m.color};"></div>
+      </div>
+    </div>
+  `).join('');
+
+  new Chart(document.getElementById('detailChart'), {
+    type:'line',
+    data:{
+      labels:['00','02','04','06','08','10','12','14','16','18','20','22'],
+      datasets:[
+        { label:'Rainfall (mm/hr)', data:[10,12,15,14,18,22,25,28,32,38,45,52], borderColor:'#58a6ff', tension:0.4, pointRadius:2, borderWidth:2 },
+        { label:'Soil Moisture (%)', data:[22,23,24,26,28,30,32,33,35,36,37,38], borderColor:'#f85149', tension:0.4, pointRadius:2, borderWidth:2 },
+        { label:'Tilt (°)', data:[1.0,1.1,1.2,1.4,1.8,2.1,2.5,2.9,3.2,3.6,4.0,4.2], borderColor:'#d29922', tension:0.4, pointRadius:2, borderWidth:2 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#8b949e', font:{size:11} } } },
+      scales:{
+        x:{ grid:{ color:'rgba(48,54,61,.3)' }, ticks:{ color:'#8b949e', font:{size:10} } },
+        y:{ grid:{ color:'rgba(48,54,61,.5)' }, ticks:{ color:'#8b949e', font:{size:10} } }
+      }
+    }
+  });
+</script>
+</body>
+</html>

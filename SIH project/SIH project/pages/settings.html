@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Settings — NER Landslide EWS</title>
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="logo-icon">⛰️</span><span>NER Landslide EWS</span></div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <a class="alert-bell" href="alerts.html">🔔<span class="alert-badge">3</span></a>
+    </div>
+  </header>
+  <div class="main main-wide">
+    <div class="sidebar">
+      <h3>Navigation</h3>
+      <a class="nav-item" href="../index.html">📊 Overview</a>
+      <a class="nav-item" href="sensors.html">📡 Sensors</a>
+      <a class="nav-item" href="alerts.html">🚨 Alerts</a>
+      <a class="nav-item" href="analytics.html">📈 Analytics</a>
+      <a class="nav-item active" href="settings.html">⚙️ Settings</a>
+      <div class="node-list">
+        <h3>Deployed Nodes</h3>
+        <div id="sidebarNodes"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1 class="page-title">⚙️ System Settings</h1>
+      <p class="page-sub">Configure thresholds, notifications, and AI model parameters</p>
+
+      <div class="chart-card">
+        <h3>🎯 Alert Thresholds</h3>
+        <div class="form-row"><label>Rainfall intensity (mm/hr)</label><input type="number" value="50" /></div>
+        <div class="form-row"><label>Soil moisture saturation (% VMC)</label><input type="number" value="30" /></div>
+        <div class="form-row"><label>Tilt deviation (°)</label><input type="number" value="5" /></div>
+        <div class="form-row"><label>Pore water pressure (kPa)</label><input type="number" value="15" /></div>
+        <div class="form-row"><label>AI risk score threshold for Critical</label><input type="number" value="0.75" step="0.05" /></div>
+        <button class="btn btn-primary" onclick="showToast('Thresholds saved successfully')">💾 Save Thresholds</button>
+      </div>
+
+      <div class="chart-card">
+        <h3>📢 Notification Channels</h3>
+        <div class="toggle"><div><div class="toggle-label">SMS Alerts</div><div class="toggle-sub">Send SMS to registered panchayat and district officials</div></div><div class="switch on"></div></div>
+        <div class="toggle"><div><div class="toggle-label">LoRa Broadcast</div><div class="toggle-sub">Broadcast to all LoRa-enabled nodes in affected zone</div></div><div class="switch on"></div></div>
+        <div class="toggle"><div><div class="toggle-label">On-Site Buzzer</div><div class="toggle-sub">Activate physical sirens at sensor locations</div></div><div class="switch on"></div></div>
+        <div class="toggle"><div><div class="toggle-label">Mobile App Push</div><div class="toggle-sub">Push notifications to registered users</div></div><div class="switch on"></div></div>
+        <div class="toggle"><div><div class="toggle-label">Email Reports</div><div class="toggle-sub">Daily digest to admin email</div></div><div class="switch"></div></div>
+      </div>
+
+      <div class="chart-card">
+        <h3>🤖 AI Model Configuration</h3>
+        <div class="form-row">
+          <label>Active Model</label>
+          <select>
+            <option>LSTM v2.3 (Recommended)</option>
+            <option>RandomForest v1.8</option>
+            <option>XGBoost v2.1</option>
+            <option>Hybrid CNN-LSTM</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Inference Mode</label>
+          <select>
+            <option>Edge (on-device TinyML)</option>
+            <option>Cloud (server-side)</option>
+            <option>Hybrid (edge + cloud fallback)</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Model refresh interval (seconds)</label><input type="number" value="30" /></div>
+        <button class="btn btn-primary" onclick="showToast('AI model configuration updated')">💾 Save AI Config</button>
+      </div>
+
+      <div class="chart-card">
+        <h3>🔌 Data Sources</h3>
+        <div class="form-row"><label>IMD Weather API Key</label><input type="text" value="imd_live_••••••••1234" /></div>
+        <div class="form-row"><label>GSI Landslide Atlas Sync</label><input type="text" value="https://gsi.gov.in/api/landslide" /></div>
+        <div class="form-row"><label>LoRa Gateway Endpoint</label><input type="text" value="lora://gateway.ner-ews.local:8080" /></div>
+        <button class="btn btn-primary" onclick="showToast('Data sources reconnected')">🔗 Test Connections</button>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="showToast('Configuration backed up')">📤 Export Config</button>
+        <button class="btn btn-danger" onclick="openModal('resetAllModal')">🗑️ Reset to Defaults</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="resetAllModal">
+  <div class="modal">
+    <h2>⚠️ Reset All Settings?</h2>
+    <p>This will revert all thresholds, notification channels, and AI configuration to factory defaults. This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('resetAllModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="closeModal('resetAllModal');showToast('Settings reset to defaults','var(--red)')">Confirm Reset</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+</body>
+</html>

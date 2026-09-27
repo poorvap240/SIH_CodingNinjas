@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Alerts — NER Landslide EWS</title>
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="logo-icon">⛰️</span><span>NER Landslide EWS</span></div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <a class="alert-bell" href="alerts.html">🔔<span class="alert-badge">3</span></a>
+    </div>
+  </header>
+  <div class="main main-wide">
+    <div class="sidebar">
+      <h3>Navigation</h3>
+      <a class="nav-item" href="../index.html">📊 Overview</a>
+      <a class="nav-item" href="sensors.html">📡 Sensors</a>
+      <a class="nav-item active" href="alerts.html">🚨 Alerts</a>
+      <a class="nav-item" href="analytics.html">📈 Analytics</a>
+      <a class="nav-item" href="settings.html">⚙️ Settings</a>
+      <div class="node-list">
+        <h3>Deployed Nodes</h3>
+        <div id="sidebarNodes"></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1 class="page-title">🚨 Alert Management</h1>
+      <p class="page-sub">Real-time alerts with multi-channel dispatch tracking</p>
+
+      <div class="card-grid">
+        <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value" style="color:var(--red)">1</div></div>
+        <div class="stat-card"><div class="stat-label">High</div><div class="stat-value" style="color:var(--orange)">1</div></div>
+        <div class="stat-card"><div class="stat-label">Moderate</div><div class="stat-value" style="color:var(--amber)">1</div></div>
+        <div class="stat-card"><div class="stat-label">Advisory</div><div class="stat-value" style="color:var(--blue)">2</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="filter-btn active" data-filter="all">All Alerts</button>
+        <button class="filter-btn" data-filter="critical">Critical</button>
+        <button class="filter-btn" data-filter="high">High</button>
+        <button class="filter-btn" data-filter="moderate">Moderate</button>
+        <button class="filter-btn" data-filter="advisory">Advisory</button>
+        <button class="btn btn-secondary" onclick="showToast('All alerts marked as read')">✓ Mark all read</button>
+        <button class="btn btn-danger" onclick="openModal('broadcastModal')">📢 Broadcast</button>
+      </div>
+
+      <div id="alertList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="broadcastModal">
+  <div class="modal">
+    <h2>📢 Broadcast Emergency Message</h2>
+    <p>Send an immediate alert to all nodes in the affected region via SMS, LoRa, buzzer, and app push.</p>
+    <div class="form-row">
+      <label>Target Region</label>
+      <select><option>All NER Nodes</option><option>Nagaland Only</option><option>Meghalaya Only</option><option>Assam Only</option></select>
+    </div>
+    <div class="form-row">
+      <label>Message</label>
+      <input type="text" value="Landslide risk elevated. Move to designated safe zones immediately." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('broadcastModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="closeModal('broadcastModal');showToast('Broadcast dispatched to 7 nodes','var(--red)')">Send Broadcast</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  function renderAlerts(filter='all') {
+    const list = EWS_DATA.alerts
+      .filter(a => filter === 'all' || a.severity === filter)
+      .map(a => `
+        <div class="alert-card ${a.severity}" style="padding:16px;margin-bottom:12px;">
+          <div class="alert-title" style="font-size:14px;">
+            <span>${a.title}</span>
+            <span class="alert-time">${a.time}</span>
+          </div>
+          <div class="alert-desc" style="font-size:12px;margin-top:6px;">
+            <strong style="color:var(--text);">${a.node}</strong> — ${a.location}<br/>${a.desc}
+          </div>
+          <div class="dispatch-row" style="margin-top:12px;font-size:11px;">
+            <span class="${a.dispatch.sms?'ok':'pending'}">SMS ${a.dispatch.sms?'✅':'⏳'}</span>
+            <span class="${a.dispatch.buzzer?'ok':'pending'}">Buzzer ${a.dispatch.buzzer?'✅':'⏳'}</span>
+            <span class="${a.dispatch.lora?'ok':'pending'}">LoRa ${a.dispatch.lora?'✅':'⏳'}</span>
+            <span class="${a.dispatch.app?'ok':'pending'}">App Push ${a.dispatch.app?'✅':'⏳'}</span>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-primary" style="font-size:11px;padding:6px 12px;" onclick="event.stopPropagation();showToast('Alert ${a.id} acknowledged')">✓ Acknowledge</button>
+            <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px;" onclick="event.stopPropagation();location.href='sensor-detail.html?id=${a.node}'">View Node</button>
+            <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px;" onclick="event.stopPropagation();showToast('Re-dispatch sent to ${a.node}')">↻ Re-dispatch</button>
+          </div>
+        </div>
+      `).join('');
+    document.getElementById('alertList').innerHTML = list || `<p style="color:var(--muted);text-align:center;padding:40px;">No alerts in this category</p>`;
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAlerts(btn.dataset.filter);
+    };
+  });
+
+  renderAlerts();
+</script>
+</body>
+</html>
